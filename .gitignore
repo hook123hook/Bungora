@@ -59,3 +59,5 @@ services/monero/tools/node_modules/
 
 .vercel
 .env*
+# Template with placeholders is safe to commit (no real secrets)
+!.env.example

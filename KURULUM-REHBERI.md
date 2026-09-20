@@ -46,8 +46,8 @@ olarak dahil edilmemiştir; aşağıdaki adımlarda kendi değerlerini doldur.
    alanındaki rezervasyon kimliğiyle `bungalow_bookings.email` adresini okur.
    `schema-booking.sql`, admin panelindeki "Kaynak" sütunu için `source`
    alanını da ekler (eski kurulumlarda idempotent `add column` ile gelir).
-4. Supabase > Settings > API'den şunları kaydet:
-   - `Project URL` (ör. `https://XXXX.supabase.co`)
+4. Supabase projen (`pltljjhsxubsipeocamt`) > Settings > API'den şunları kaydet:
+   - `Project URL`: `https://pltljjhsxubsipeocamt.supabase.co`
    - `anon public` key
    - `service_role` key (sadece bridge'de, istemciye asla)
 
