@@ -1,0 +1,12 @@
+# Vercel build/deploy artifacts
+.next
+.vercel
+*.tsbuildinfo
+
+# Monero bridge — runs locally on the wallet machine, never on Vercel
+services/monero/
+
+# Local secrets and environment
+*.local
+*.local.*
+.env*.local

@@ -1,0 +1,25 @@
+{
+  "supabaseUrl": "https://YOUR-PROJECT-REF.supabase.co",
+  "supabaseServiceRoleKey": "",
+  "mainAddress": "42UaqUi6ixkTdwiMuzQnrSg1KUypQZv6A3cBKkV9LF9ASh52yqnju1EFqtv8orck4miKQDrxWgZLG5RL4d8sZfBhJqPepyd",
+  "wallet": {
+    "rpcUrl": "http://127.0.0.1:18283/json_rpc",
+    "username": "bungora",
+    "password": "CHANGE_ME"
+  },
+  "confirmations": 10,
+  "pollIntervalSec": 300,
+  "poolTarget": 50,
+  "poolMin": 10,
+  "simplexNotify": false,
+  "mailTransport": "resend",
+  "resendApiKey": "",
+  "mailFrom": "Bungora <bungora@proton.me>",
+  "smtp": {
+    "host": "smtp.protonmail.ch",
+    "port": 587,
+    "secure": false,
+    "user": "bungora@proton.me",
+    "password": ""
+  }
+}
