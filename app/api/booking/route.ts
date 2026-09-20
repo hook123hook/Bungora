@@ -40,6 +40,7 @@ export async function POST(request: Request) {
     price_estimate: body.price_estimate !== false,
     lang: str(body.lang, 10) || "tr",
     message: str(body.message, 5000),
+    source: str(body.source, 20) || "web",
   };
 
   if (
