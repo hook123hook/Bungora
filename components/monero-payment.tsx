@@ -156,7 +156,7 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
       <span className="complete-icon"><CircleCheck size={38}/></span>
       <DialogHeader>
         <DialogTitle ref={receipt} tabIndex={-1}>{t("Rezervasyon onaylandı.")}</DialogTitle>
-        <DialogDescription>{t("Ödemen alındı. Aşağıdaki onay kodunu SimpleX'ten tesise ilet; teyit ve detaylar için seninle iletişime geçecekler.")}</DialogDescription>
+        <DialogDescription>{t("Ödemen alındı. Aşağıdaki onay kodunu cüzdanda ve fatura numarasıyla sakla; yönetim panelinden teyit için gerekir.") + " " + t("Yine de SimpleX üzerinden iletişime geçmek istersen QR'ı okut veya butona bas.")}</DialogDescription>
       </DialogHeader>
       <div className="receipt-card">
         <div className="receipt-code-box">
@@ -176,7 +176,7 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
         <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&qzone=1&data=${encodeURIComponent(SIMPLEXLINK)}`} width={140} height={140} alt={t("SimpleX QR kodu")} loading="lazy"/>
         <div>
           <p><strong>{t("SimpleX ile iletişime geç")}</strong></p>
-          <p>{t("QR kodu okut veya aşağıdaki butonu tıkla. Onay kodunu mesaj olarak yaz.")}</p>
+          <p>{t("QR kodu okut veya aşağıdaki butona bas. İsteğe bağlı — onay kodu yetersizdir.")}</p>
           <a className="primary-button" href={SIMPLEXLINK} target="_blank" rel="noopener noreferrer">{t("SimpleX'te aç")}<ArrowRight className="directional-icon" size={16}/></a>
         </div>
       </div>
@@ -188,47 +188,52 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
   }
 
   if (step === "error" || !estimate) {
-    return <div className="payment-screen"><DialogHeader className="payment-header"><p className="eyebrow">{t("MONERO (XMR) İLE ÖDE")}</p><DialogTitle>{t("Şu an ödeme başlatılamıyor.")}</DialogTitle><DialogDescription>{t("Bu konaklama için kesin bir tutar istemeden ödeme ekranı açılamıyor. SimpleX üzerinden ulaş, tutarı birlikte netleştir.")}</DialogDescription></DialogHeader>
-      <div className="xmr-fallback"><a className="primary-button" href={SIMPLEXLINK} target="_blank" rel="noopener noreferrer"><Wallet size={16}/>{t("SimpleX üzerinden yaz")}</a><DialogClose className="edit-request"><ArrowLeft className="directional-icon" size={15}/>{t("Tarihleri değiştir")}</DialogClose></div>
+    return <div className="payment-screen"><DialogHeader className="payment-header"><p className="eyebrow">{t("MONERO (XMR) İLE ÖDE")}</p><DialogTitle>{t("Şu an ödeme başlatılamıyor.")}</DialogTitle><DialogDescription>{t("Bu konaklama için kesin bir tutar istemeden ödeme ekranı açılamıyor. Tekrar deneyin veya yönetim panelinden bildirin.")}</DialogDescription></DialogHeader>
+      <div className="xmr-fallback"><DialogClose className="primary-button">{t("Kapat")}</DialogClose></div>
       {error && <p className="booking-error" role="alert">{error}</p>}
     </div>;
   }
 
   if (step === "expired" && invoice) {
-    return <div className="payment-screen"><DialogHeader className="payment-header"><p className="eyebrow">{t("MONERO (XMR) İLE ÖDE")}</p><DialogTitle>{t("Ödeme süresi doldu.")}</DialogTitle><DialogDescription>{t("Bu fatura yalnızca {invoice_no} numarasıyla {minutes} dakika geçerliydi. Yeni bir fatura için ekranı kapatıp tekrar başlat." , { invoice_no: invoice.invoice_no, minutes: 30 })}</DialogDescription></DialogHeader>
-      <div className="xmr-fallback"><DialogClose className="primary-button">{t("Ekranı kapat")}</DialogClose></div>
+    return <div className="payment-screen"><DialogHeader className="payment-header"><p className="eyebrow">{t("MONERO (XMR) İLE ÖDE")}</p><DialogTitle>{t("Ödeme süresi doldu.")}</DialogTitle><DialogDescription>{t("Bu fatura yalnızca {invoice_no} numarasıyla {minutes} dakika geçerliydi. Yeni bir fatura için ekranı kapatıp tekrar başlat.", { invoice_no: invoice.invoice_no, minutes: 30 })}</DialogDescription></DialogHeader>
+      <div className="xmr-fallback">
+        <div className="xmr-address-layout">
+          <code className="xmr-address" dir="ltr">{invoice.address}</code>
+          <button type="button" className="xmr-copy-button" onClick={copyAddress}><Copy size={15}/>{copied ? t("Kopyalandı.") : t("Adresi kopyala")}</button>
+        </div>
+        <DialogClose className="primary-button">{t("Yeni fatura aç")}</DialogClose>
+      </div>
       <p className="xmr-privacy-note"><LockKeyhole size={13}/>{t("Gönderdiysen adresi yine de kontrol et; o adrese gelen ödeme takip cüzdanında görünür.")}</p>
     </div>;
   }
 
   if (step === "pay" && invoice) {
     return <div className="payment-screen">
-      <DialogHeader className="payment-header"><p className="eyebrow">{t("MONERO (XMR) İLE ÖDE")}</p><DialogTitle>{t("Faturan hazır.")}</DialogTitle><DialogDescription>{t("Ödemeyi Monero cüzdanından bu adrese gönder. Tutar ve adres bir kez oluşturulur; aynı adrese tek seferde beklentisiyle gönder.")}</DialogDescription></DialogHeader>
+      <DialogHeader className="payment-header"><p className="eyebrow">{t("MONERO (XMR) İLE ÖDE")}</p><DialogTitle>{t("Faturanı kaydet.")}</DialogTitle><DialogDescription>{t("Cüzdanından bu adrese XMR gönder. Adres ve QR kodu aşağıdadır; tek seferlik faturadır.") + " " + t("{invoice_no} fatura numarasıyla aynı adrese yalnızca bu ödeme için tahsis edildi", { invoice_no: invoice.invoice_no })}</DialogDescription></DialogHeader>
       <ol className="checkout-steps" aria-label={t("İşlem adımları")}><li><CircleCheck size={14}/>{t("Konaklama")}</li><li aria-current="step"><span>02</span>{t("Ödeme")}</li><li><span>03</span>{t("Onay")}</li></ol>
-      <div className="checkout-layout">
-        <section className="checkout-summary xmr-summary" aria-labelledby="xmr-amount-heading">
-          <h3 id="xmr-amount-heading">{t("Gönderilecek tutar")}</h3>
-          <div className="xmr-amount-box"><strong className="xmr-amount-xmr"><bdi>{invoice.amount_xmr.toFixed(6)} XMR</bdi></strong><span className="xmr-amount-try">{t("≈ {amount} (fatura kurundan)", { amount: money(invoice.amount_try) })}</span></div>
-          <p className="xmr-rate-line">{t("Kur: 1 XMR ≈ {rate} · %{safety} güvenlik payı dahil", { rate: money(invoice.fx_rate), safety: 3 })}</p>
-          <div className="xmr-invoice-ref"><span>{t("Fatura")}</span><strong><bdi>{invoice.invoice_no}</bdi></strong></div>
-          <dl className="request-summary xmr-property-summary"><div className="checkout-property"><div className="checkout-photo"><PropertyPhoto src={bungalow.image} alt={bungalow.name}/></div><div><strong>{bungalow.name}</strong><p><MapPin size={12}/>{bungalow.location}</p></div></div><div><dt>{t("Giriş")}</dt><dd>{date(checkIn)}</dd></div><div><dt>{t("Çıkış")}</dt><dd>{date(checkOut)}</dd></div><div><dt>{t("Konaklama")}</dt><dd>{t("{nights} gece · {guests} misafir", { nights, guests })}</dd></div></dl>
-        </section>
-        <section className="payment-panel" aria-labelledby="xmr-address-heading">
-          <h3 id="xmr-address-heading"><Wallet size={19}/>{t("Monero adresi")}</h3>
-          <p className="payment-panel-note">{t("{invoice_no} fatura numarasıyla aynı adrese yalnızca bu ödeme için tahsis edildi", { invoice_no: invoice.invoice_no })}</p>
-          <div className="xmr-address-layout">
-            <img className="xmr-qr" src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&qzone=1&data=${encodeURIComponent(invoice.qr)}`} width={150} height={150} alt={t("Monero ödeme QR kodu")} loading="lazy"/>
+      <section className="payment-panel xmr-address-panel" aria-labelledby="xmr-address-heading">
+        <h3 id="xmr-address-heading"><Wallet size={19}/>{t("Monero cüzdan adresi")}</h3>
+        <div className="xmr-address-layout">
+          <img className="xmr-qr" src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&qzone=1&data=${encodeURIComponent(invoice.qr)}`} width={170} height={170} alt={t("Monero ödeme QR kodu")} loading="lazy"/>
+          <div className="xmr-address-text">
             <code className="xmr-address" dir="ltr">{invoice.address}</code>
+            <button type="button" className="xmr-copy-button" onClick={copyAddress}><Copy size={16}/>{copied ? t("Kopyalandı.") : t("Adresi kopyala")}</button>
           </div>
-          <button type="button" className="xmr-copy-button" onClick={copyAddress}><Copy size={15}/>{copied ? t("Kopyalandı.") : t("Adresi kopyala")}</button>
-          <div className="xmr-status">
-            <span className={`xmr-status-dot ${status?.status === "partial" ? "is-partial" : status?.status === "credited" ? "is-done" : ""}`} aria-hidden="true"/>
-            <div><strong>{status?.status === "partial" ? t("Kısmi ödeme görüldü") : status?.status === "credited" ? t("Ödeme alındı") : t("Ödeme bekleniyor")}</strong><small>{status?.status === "partial" ? t("Gönderilen tutar beklenenden farklı — destek için kopyaladığın adresi ve fatura numarasını ilet.") : t("Gönderimi işledikçe burada görünür. 10 blok onayı birkaç dakika sürebilir.")}</small></div>
-          </div>
-          <p className="xmr-expiry"><CircleHelp size={13}/>{t("Ödeme süresi")}: <strong><bdi>{countdown}</bdi></strong> <span>{t("Geride")}</span></p>
-          <DialogClose className="edit-request"><ArrowLeft className="directional-icon" size={15}/>{t("Ekranı kapat")}</DialogClose>
-        </section>
+        </div>
+        <p className="xmr-invoice-ref"><span>{t("Fatura No")}: </span><strong><bdi>{invoice.invoice_no}</bdi></strong></p>
+      </section>
+      <section className="checkout-summary xmr-summary" aria-labelledby="xmr-amount-heading">
+        <h3 id="xmr-amount-heading">{t("Gönderilecek tutar")}</h3>
+        <div className="xmr-amount-box"><strong className="xmr-amount-xmr"><bdi>{invoice.amount_xmr.toFixed(6)} XMR</bdi></strong><span className="xmr-amount-try">{t("≈ {amount} (fatura kurundan)", { amount: money(invoice.amount_try) })}</span></div>
+        <p className="xmr-rate-line">{t("Kur: 1 XMR ≈ {rate} · %{safety} güvenlik payı dahil", { rate: money(invoice.fx_rate), safety: 3 })}</p>
+        <dl className="request-summary xmr-property-summary"><div className="checkout-property"><div className="checkout-photo"><PropertyPhoto src={bungalow.image} alt={bungalow.name}/></div><div><strong>{bungalow.name}</strong><p><MapPin size={12}/>{bungalow.location}</p></div></div><div><dt>{t("Giriş")}</dt><dd>{date(checkIn)}</dd></div><div><dt>{t("Çıkış")}</dt><dd>{date(checkOut)}</dd></div><div><dt>{t("Konaklama")}</dt><dd>{t("{nights} gece · {guests} misafir", { nights, guests })}</dd></div></dl>
+      </section>
+      <div className="xmr-status">
+        <span className={`xmr-status-dot ${status?.status === "partial" ? "is-partial" : status?.status === "credited" ? "is-done" : ""}`} aria-hidden="true"/>
+        <div><strong>{status?.status === "partial" ? t("Kısmi ödeme görüldü") : status?.status === "credited" ? t("Ödeme alındı") : t("Ödeme bekleniyor")}</strong><small>{status?.status === "partial" ? t("Gönderilen tutar beklenenden farklı — destek için adresi ve fatura numarasını ilet.") : t("Gönderimi işledikçe burada görünür. 10 blok onayı birkaç dakika sürebilir.")}</small></div>
       </div>
+      <p className="xmr-expiry"><CircleHelp size={13}/>{t("Ödeme süresi")}: <strong><bdi>{countdown}</bdi></strong> <span>{t("Geride")}</span></p>
+      <DialogClose className="edit-request"><ArrowLeft className="directional-icon" size={15}/>{t("Ekranı kapat")}</DialogClose>
     </div>;
   }
 
