@@ -61,3 +61,6 @@ services/monero/tools/node_modules/
 .env*
 # Template with placeholders is safe to commit (no real secrets)
 !.env.example
+
+# Local Netlify folder
+.netlify
