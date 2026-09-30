@@ -1,21 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, ArrowRight, CircleCheck, CircleHelp, Copy, LockKeyhole, MapPin, Wallet } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { ArrowLeft, ArrowRight, CircleCheck, CircleHelp, Copy, HandCoins, LockKeyhole, MapPin, Percent, Wallet } from "lucide-react";
 import { DialogClose, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { PropertyPhoto } from "@/components/property-photo";
 import { useSitePreferences } from "@/components/site-preferences";
 import { getNights, getStayError, getStayPriceBreakdown, type Bungalow } from "@/lib/bungalows";
 
-const SIMPLEXLINK = "https://smp19.simplex.im/a#o7JePoRgFSCSF5EaJJcJ8gG2a7CzrOLaeo9aVU3rliE";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DEPOSIT_PCT = 25;
+type Stage = "full" | "deposit";
 
 type InvoiceData = {
   id: string;
   invoice_no: string;
   address: string;
   amount_try: number;
+  total_try: number;
+  stage: Stage;
+  deposit_pct: number;
   amount_xmr: number;
   fx_rate: number;
   expires_at: string;
@@ -27,6 +31,7 @@ type StatusData = {
   status: "pending" | "partial" | "credited" | "expired" | "void";
   confirmations: number;
   received_amount_xmr: number | null;
+  remaining_try: number;
   expires_at: string;
 };
 
@@ -49,10 +54,20 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
   const [agreed, setAgreed] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [stage, setStage] = useState<Stage>("deposit");
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [status, setStatus] = useState<StatusData | null>(null);
   const [copied, setCopied] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(0);
+
+  // Per-flow idempotency key so a retry reuses the same invoice instead of
+  // burning another pool address. Stable for the life of this dialog mount.
+  const flowId = useId();
+  const clientKey = useRef(`bgr-${flowId.replace(/[^A-Za-z0-9_-]/g, "")}`);
+
+  const total = Math.round(estimate?.total ?? 0);
+  const due = stage === "deposit" ? Math.round((total * DEPOSIT_PCT) / 100) : total;
+  const balance = Math.max(0, total - due);
 
   useEffect(() => {
     if (step !== "pay" || !invoice) return;
@@ -112,6 +127,7 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
           nights,
           nightly_price: estimate.total / Math.max(1, nights),
           total_try: Math.round(estimate.total),
+          payment_stage: stage,
           price_estimate: estimate.basis !== "generic",
           lang: language,
           message: message.trim(),
@@ -128,7 +144,13 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
       const invoiceLabel = `${bungalow.name} · ${date(checkIn)} — ${date(checkOut)}`;
       const r = await fetch("/api/xmr/invoice", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount_try: Math.round(estimate.total), reference: invoiceReference, label: invoiceLabel }),
+        body: JSON.stringify({
+          amount_try: Math.round(estimate.total),
+          reference: invoiceReference,
+          label: invoiceLabel,
+          stage,
+          client_key: clientKey.current,
+        }),
       });
       const data = await r.json();
       if (!r.ok) {
@@ -156,7 +178,7 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
       <span className="complete-icon"><CircleCheck size={38}/></span>
       <DialogHeader>
         <DialogTitle ref={receipt} tabIndex={-1}>{t("Rezervasyon onaylandı.")}</DialogTitle>
-        <DialogDescription>{t("Ödemen alındı. Aşağıdaki onay kodunu cüzdanda ve fatura numarasıyla sakla; yönetim panelinden teyit için gerekir.") + " " + t("Yine de SimpleX üzerinden iletişime geçmek istersen QR'ı okut veya butona bas.")}</DialogDescription>
+        <DialogDescription>{t("Ödemen alındı. Aşağıdaki onay kodunu cüzdanda ve fatura numarasıyla sakla; yönetim panelinden teyit için gerekir.")}</DialogDescription>
       </DialogHeader>
       <div className="receipt-card">
         <div className="receipt-code-box">
@@ -169,16 +191,9 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
           <div><dt>{t("Giriş")}</dt><dd>{date(checkIn)}</dd></div>
           <div><dt>{t("Çıkış")}</dt><dd>{date(checkOut)}</dd></div>
           <div><dt>{t("Konaklama")}</dt><dd>{t("{nights} gece · {guests} misafir", { nights, guests })}</dd></div>
-          <div><dt>{t("Ödenen tutar")}</dt><dd>≈ {estimate ? money(estimate.total) : ""} · {(status?.received_amount_xmr ?? invoice?.amount_xmr ?? 0).toFixed(6)} XMR</dd></div>
+          <div><dt>{t("Ödenen tutar")}</dt><dd>≈ {estimate ? money(invoice?.amount_try ?? estimate.total) : ""} · {(status?.received_amount_xmr ?? invoice?.amount_xmr ?? 0).toFixed(6)} XMR</dd></div>
+          {invoice?.stage === "deposit" && <div><dt>{t("Kalan tutar")}</dt><dd><bdi>{money(status?.remaining_try ?? Math.max(0, (invoice?.total_try ?? 0) - (invoice?.amount_try ?? 0)))}</bdi> · {t("tesise varışta")}</dd></div>}
         </dl>
-      </div>
-      <div className="receipt-simplex">
-        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&qzone=1&data=${encodeURIComponent(SIMPLEXLINK)}`} width={140} height={140} alt={t("SimpleX QR kodu")} loading="lazy"/>
-        <div>
-          <p><strong>{t("SimpleX ile iletişime geç")}</strong></p>
-          <p>{t("QR kodu okut veya aşağıdaki butona bas. İsteğe bağlı — onay kodu yetersizdir.")}</p>
-          <a className="primary-button" href={SIMPLEXLINK} target="_blank" rel="noopener noreferrer">{t("SimpleX'te aç")}<ArrowRight className="directional-icon" size={16}/></a>
-        </div>
       </div>
       <div className="receipt-actions">
         <DialogClose className="edit-request">{t("Kapat")}</DialogClose>
@@ -220,11 +235,12 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
             <button type="button" className="xmr-copy-button" onClick={copyAddress}><Copy size={16}/>{copied ? t("Kopyalandı.") : t("Adresi kopyala")}</button>
           </div>
         </div>
-        <p className="xmr-invoice-ref"><span>{t("Fatura No")}: </span><strong><bdi>{invoice.invoice_no}</bdi></strong></p>
+        <p className="xmr-invoice-ref"><span>{t("Fatura No")}: </span><strong><bdi>{invoice.invoice_no}</bdi></strong><span className={`xmr-stage-pill ${invoice.stage === "deposit" ? "is-deposit" : "is-full"}`}>{invoice.stage === "deposit" ? t("%25 ön ödeme") : t("Tam ödeme")}</span></p>
       </section>
       <section className="checkout-summary xmr-summary" aria-labelledby="xmr-amount-heading">
         <h3 id="xmr-amount-heading">{t("Gönderilecek tutar")}</h3>
         <div className="xmr-amount-box"><strong className="xmr-amount-xmr"><bdi>{invoice.amount_xmr.toFixed(6)} XMR</bdi></strong><span className="xmr-amount-try">{t("≈ {amount} (fatura kurundan)", { amount: money(invoice.amount_try) })}</span></div>
+        {invoice.stage === "deposit" && <p className="xmr-stage-line"><Percent size={13}/><span>{t("Bu bir ön ödeme faturası: toplam {total} üzerinden %{pct} alındı. Kalan {balance} tesise varışta ödenir.", { total: money(invoice.total_try), pct: invoice.deposit_pct, balance: money(Math.max(0, invoice.total_try - invoice.amount_try)) })}</span></p>}
         <p className="xmr-rate-line">{t("Kur: 1 XMR ≈ {rate} · %{safety} güvenlik payı dahil", { rate: money(invoice.fx_rate), safety: 3 })}</p>
         <dl className="request-summary xmr-property-summary"><div className="checkout-property"><div className="checkout-photo"><PropertyPhoto src={bungalow.image} alt={bungalow.name}/></div><div><strong>{bungalow.name}</strong><p><MapPin size={12}/>{bungalow.location}</p></div></div><div><dt>{t("Giriş")}</dt><dd>{date(checkIn)}</dd></div><div><dt>{t("Çıkış")}</dt><dd>{date(checkOut)}</dd></div><div><dt>{t("Konaklama")}</dt><dd>{t("{nights} gece · {guests} misafir", { nights, guests })}</dd></div></dl>
       </section>
@@ -242,6 +258,7 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
     <ol className="checkout-steps" aria-label={t("İşlem adımları")}><li aria-current="step"><span>01</span>{t("İletişim")}</li><li><span>02</span>{t("Ödeme")}</li><li><span>03</span>{t("Onay")}</li></ol>
     <div className="checkout-layout">
       <section className="checkout-summary" aria-labelledby="stay-summary-heading"><h3 id="stay-summary-heading">{t("Konaklama özeti")}</h3><div className="checkout-property"><div className="checkout-photo"><PropertyPhoto src={bungalow.image} alt={bungalow.name}/></div><div><strong>{bungalow.name}</strong><p><MapPin size={12}/>{bungalow.location}</p></div></div><dl className="request-summary"><div><dt>{t("Giriş")}</dt><dd>{date(checkIn)}</dd></div><div><dt>{t("Çıkış")}</dt><dd>{date(checkOut)}</dd></div><div><dt>{t("Konaklama")}</dt><dd>{t("{nights} gece · {guests} misafir", { nights, guests })}</dd></div>{estimate.lines.map((line) => <div className="stay-price-line" key={line.nightlyPrice}><dt><bdi>{t("{nights} gece × {price}", { nights: line.nights, price: money(line.nightlyPrice) })}</bdi></dt><dd><bdi>{money(line.total)}</bdi></dd></div>)}<div className="summary-total"><dt>{t("Tahmini konaklama tutarı")}</dt><dd>{<bdi>{money(estimate.total)}</bdi>}</dd></div></dl>
+        <div className="summary-due"><span><HandCoins size={13}/>{t("Şimdi ödenecek tutar")}</span><strong><bdi>{money(due)}</bdi></strong>{stage === "deposit" && <small>{t("%25 ön ödeme · kalan {balance} tesiste", { balance: money(balance) })}</small>}</div>
         <p className="xmr-privacy-note"><LockKeyhole size={13}/>{t("Ödeme takibi anonim Monero ile yapılır; kart veya banka bilgisi istenmez.")}</p>
       </section>
       <section className="payment-panel" aria-labelledby="contact-fields-heading">
@@ -249,12 +266,41 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
         <form className="xmr-contact-fields" onSubmit={submit} noValidate>
           <div><label htmlFor="xmr-first-name">{t("Ad")}</label><Input id="xmr-first-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" required/></div>
           <div><label htmlFor="xmr-last-name">{t("Soyad")}</label><Input id="xmr-last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name"/></div>
-          <div><label htmlFor="xmr-contact">{t("İletişim (e-posta veya SimpleX)")}</label><Input id="xmr-contact" value={contact} onChange={(e) => setContact(e.target.value)} autoComplete="email" dir="ltr" required/></div>
+          <div><label htmlFor="xmr-contact">{t("İletişim (e-posta)")}</label><Input id="xmr-contact" value={contact} onChange={(e) => setContact(e.target.value)} autoComplete="email" dir="ltr" required/></div>
           <div><label htmlFor="xmr-message">{t("Mesaj (isteğe bağlı)")}</label><Input id="xmr-message" value={message} onChange={(e) => setMessage(e.target.value)}/></div>
           <input type="text" name="website" value="" hidden aria-hidden="true" tabIndex={-1} autoComplete="off"/>
-          <label className="payment-acknowledgement"><input type="checkbox" className="xmr-checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)}/><span>{t("Rezervasyon talebimin kaydedilmesini kabul ediyorum. {amount} tutarındaki fatura bir kez oluşturulur ve ödeme bilgilerim gizli tutulur.", { amount: money(estimate.total) })}</span></label>
+          <fieldset className="pay-options" aria-describedby="pay-options-hint">
+            <legend className="pay-options-legend">{t("Ödeme seç")}</legend>
+            <p className="pay-options-hint" id="pay-options-hint">{t("İkisinden birini seç; faturan bu tutar üzerinden açılır.")}</p>
+            <div className="pay-option-grid">
+              <button type="button" className={`pay-option ${stage === "deposit" ? "is-on" : ""}`} onClick={() => setStage("deposit")} aria-pressed={stage === "deposit"}>
+                <span className="pay-option-radio" aria-hidden="true"/>
+                <span className="pay-option-head">
+                  <span className="pay-option-title">{t("%25 ön ödeme")}</span>
+                  <span className="pay-option-badge">{t("Rezervasyon garantisi")}</span>
+                </span>
+                <span className="pay-option-amount"><bdi>{money(due)}</bdi></span>
+                <span className="pay-option-sub">{t("Bugün öde, yerini hemen güvenceye al. Kalan {balance} tesise varışta.", { balance: money(balance) })}</span>
+              </button>
+              <button type="button" className={`pay-option ${stage === "full" ? "is-on" : ""}`} onClick={() => setStage("full")} aria-pressed={stage === "full"}>
+                <span className="pay-option-radio" aria-hidden="true"/>
+                <span className="pay-option-head">
+                  <span className="pay-option-title">{t("Tam ödeme")}</span>
+                  <span className="pay-option-badge is-quiet">{t("Tek seferde")}</span>
+                </span>
+                <span className="pay-option-amount"><bdi>{money(total)}</bdi></span>
+                <span className="pay-option-sub">{t("Tüm konaklama bedelini şimdi öde, kalan borç olmaz.")}</span>
+              </button>
+            </div>
+            <p className="pay-due-line">
+              <HandCoins size={14}/>
+              <span>{t("Şimdi ödenecek tutar")}</span>
+              <strong><bdi>{money(due)}</bdi></strong>
+            </p>
+          </fieldset>
+          <label className="payment-acknowledgement"><input type="checkbox" className="xmr-checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)}/><span>{t("Rezervasyon talebimin kaydedilmesini kabul ediyorum. {amount} tutarındaki fatura bir kez oluşturulur ve ödeme bilgilerim gizli tutulur.", { amount: money(due) })}</span></label>
           {error && <p className="booking-error" role="alert">{error}</p>}
-          <button type="submit" className="primary-button booking-submit" disabled={sending}>{sending ? t("Gönderiliyor…") : t("Talep gönder ve XMR ile öde")}<ArrowRight className="directional-icon" size={16}/></button>
+          <button type="submit" className="primary-button booking-submit" disabled={sending}>{sending ? t("Gönderiliyor…") : stage === "deposit" ? t("%25 ön ödemeyi onayla ve devam et") : t("Tam ödemeyi onayla ve devam et")}<ArrowRight className="directional-icon" size={16}/></button>
           <DialogClose className="edit-request"><ArrowLeft className="directional-icon" size={15}/>{t("Tarihleri değiştir")}</DialogClose>
         </form>
       </section>

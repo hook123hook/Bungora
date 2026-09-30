@@ -21,6 +21,12 @@ create table if not exists xmr_invoices (
   subaddress_index int not null,
   amount_fiat numeric(16,2) not null,
   currency text not null default 'TRY' check (currency in ('TRY','EUR')),
+  -- Ödeme aşaması: 'full' = tam tutar, 'deposit' = %25 ön ödeme, 'remainder' = kalan.
+  stage text not null default 'full' check (stage in ('full','deposit','remainder')),
+  -- Konaklamanın tam tutarı; ön ödeme faturasında yüzde referansı olarak durur.
+  total_fiat numeric(16,2),
+  -- Ödeme akışı başına üretilen idempotency anahtarı (aynı akışta tek fatura).
+  client_key text,
   amount_xmr numeric(14,8) not null,
   fx_rate numeric(16,8) not null,
   safety_pct numeric(6,2) not null default 3.00,

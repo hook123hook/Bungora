@@ -17,11 +17,12 @@ type Invoice = {
   id: string; invoice_no: string; address: string; amount_fiat: number; currency: string;
   amount_xmr: number; fx_rate: number; safety_pct: number; reference: string | null; label: string | null;
   status: string; confirmations: number; received_amount_xmr: number | null; tx_hash: string | null;
-  expires_at: string; created_at: string; channel: string;
+  expires_at: string; created_at: string; channel: string; stage: string | null; total_fiat: number | null;
 };
 
 const STATUS_LABEL: Record<string, string> = { new: "Yeni", read: "Okundu", confirmed: "Teyitli", closed: "Kapandı", archived: "Arşiv" };
 const XSTATUS_LABEL: Record<string, string> = { pending: "Bekliyor", partial: "Kısmi", credited: "Ödendi", expired: "Süresi doldu", void: "İptal" };
+const STAGE_LABEL: Record<string, string> = { full: "Tam ödeme", deposit: "%25 ön ödeme", remainder: "Kalan" };
 const SAS = "https://esm.sh/@supabase/supabase-js@2";
 
 const ESC_MAP: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
@@ -244,11 +245,13 @@ const sbModuleRef = useRef<SupaClient | null>(null);
                 {["all", ...Object.keys(XSTATUS_LABEL)].map((k) => <button key={k} className={`tab-btn ${xfilter === k ? "is-on" : ""}`} onClick={() => setXfilter(k)}>{k === "all" ? "Tümü" : XSTATUS_LABEL[k]}</button>)}
               </div>
               <div className="case-table-wrap">
-                <table className="cases"><thead><tr><th>Fatura</th><th>Referans · Tesis</th><th>Kanal</th><th>TRY</th><th>XMR tutar</th><th>Durum</th><th>Onay</th><th>Tarih</th></tr></thead>
+                <table className="cases"><thead><tr><th>Fatura</th><th>Referans · Tesis</th><th>Kanal</th><th>Aşama</th><th>TRY</th><th>XMR tutar</th><th>Durum</th><th>Onay</th><th>Tarih</th></tr></thead>
                   <tbody>{xfiltered.map((r) => <tr className="row" key={r.id}>
                     <td>{esc(r.invoice_no)}</td>
                     <td>{esc(r.reference || "-")}<br /><small className="muted">{esc((r.label || "").slice(0, 34))}</small></td>
                     <td><span className="pill ch-xmr">XMR</span></td>
+                    <td><span className={`pill ${r.stage === "deposit" ? "partial" : "credited"}`}>{STAGE_LABEL[r.stage || "full"]}</span>
+                      {r.stage === "deposit" && r.total_fiat != null && r.total_fiat !== r.amount_fiat ? <><br /><small className="muted">toplam: <bdi>{money(r.total_fiat)}</bdi></small></> : null}</td>
                     <td><bdi>{money(r.amount_fiat)}</bdi></td>
                     <td>{r.amount_xmr} XMR{r.received_amount_xmr != null ? <><br /><small className="muted">aldı: {r.received_amount_xmr} XMR</small></> : null}</td>
                     <td><span className={`pill ${r.status}`}>{XSTATUS_LABEL[r.status] || r.status}</span></td>

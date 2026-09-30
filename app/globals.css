@@ -196,7 +196,7 @@ h1 em,.slow-note em {font-weight:400;font-style:italic;color:var(--text-secondar
 .footer .shell {display:flex;align-items:center;gap:30px;min-height:100px}
 .footer .brand {transform:scale(.8);transform-origin:left center;margin-inline-end:-27px}
 .footer p {font-size:10px;color:var(--text-muted)}
-.footer .simplex-contact {display:flex;align-items:center;gap:11px;padding:10px 13px;border:1px solid var(--border);border-radius:10px;background:var(--soft-bg)}.simplex-contact img {border-radius:6px;flex-shrink:0}.simplex-contact span {font-size:9px;line-height:1.7;color:var(--text-secondary);max-width:180px}.simplex-contact:hover {border-color:var(--green)}
+
 .footer .shell>span {margin-inline-start:auto;color:var(--text-muted);font-size:9px}
 .filters-dialog {max-height:88dvh;overflow-y:auto;max-width:390px!important}
 .filters-dialog .filter-section {padding-inline:0}
@@ -436,6 +436,35 @@ bdi {unicode-bidi:isolate}
 .xmr-address-layout {display:flex;gap:18px;align-items:flex-start;margin:22px 0 13px;flex-wrap:wrap}.xmr-qr {width:150px;height:150px;border-radius:10px;border:1px solid var(--border);flex-shrink:0}.xmr-address {flex:1;min-width:200px;font-size:11px;line-height:1.8;word-break:break-all;background:var(--soft-bg);border:1px solid var(--border);border-radius:9px;padding:13px 14px;direction:ltr;text-align:left}.xmr-copy-button {display:inline-flex;gap:7px;align-items:center;font-size:11px;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:8px;padding:8px 13px;cursor:pointer;transition:border-color .15s}.xmr-copy-button:hover {border-color:var(--green)}
 .xmr-status {display:flex;gap:11px;align-items:flex-start;margin-top:19px;padding:14px 16px;border:1px solid var(--border);border-radius:9px;background:var(--soft-bg)}.xmr-status-dot {width:9px;height:9px;border-radius:50%;background:var(--text-muted);margin-top:4px;flex-shrink:0;animation:pulse 1.6s infinite}.xmr-status-dot.is-partial {background:#c98a1b;animation:none}.xmr-status-dot.is-done {background:var(--green);animation:none}@keyframes pulse {0%,100%{opacity:1}50%{opacity:.35}}.xmr-status strong {display:block;font-size:12px}.xmr-status small {display:block;margin-top:4px;font-size:10px;line-height:1.7;color:var(--text-muted)}
 .xmr-expiry {display:flex;gap:7px;align-items:center;font-size:11px;color:var(--text-secondary);margin-top:17px}.xmr-expiry strong {font-size:12px;letter-spacing:1px;font-variant-numeric:tabular-nums}.xmr-expiry span {color:var(--text-muted)}
+
+/* Ödeme seçenekleri: tam ödeme / %25 ön ödeme (ViaRela'daki stage seçimi, Bungora temasında) */
+.pay-options {grid-column:1/-1;border:0;padding:0;margin:4px 0 0;min-width:0}
+.pay-options-legend {font-size:10px;color:var(--text-secondary);font-weight:600;padding:0;margin-bottom:5px}
+.pay-options-hint {font-size:10px;line-height:1.7;color:var(--text-muted);margin-bottom:11px}
+.pay-option-grid {display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.pay-option {display:flex;flex-direction:column;gap:7px;text-align:start;padding:15px 16px;border:1px solid var(--border);border-radius:10px;background:var(--card);cursor:pointer;transition:border-color .16s,background .16s,box-shadow .16s;position:relative}
+.pay-option:hover {border-color:var(--sage)}
+.pay-option.is-on {border-color:var(--green);background:var(--soft-bg);box-shadow:0 0 0 1px var(--green) inset}
+.pay-option-radio {position:absolute;top:15px;inset-inline-end:15px;width:15px;height:15px;border-radius:50%;border:1.5px solid var(--border);background:var(--card);transition:border-color .16s}
+.pay-option.is-on .pay-option-radio {border-color:var(--green);border-width:4.5px}
+.pay-option-head {display:flex;flex-direction:column;gap:5px;padding-inline-end:22px}
+.pay-option-title {font-family:Georgia,serif;font-size:16px;line-height:1.2;color:var(--ink)}
+.pay-option-badge {align-self:flex-start;font-size:9px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:20px;background:var(--green);color:#fff}
+.pay-option-badge.is-quiet {background:var(--secondary);color:var(--text-secondary)}
+.pay-option-amount {font-size:19px;font-family:Georgia,serif;font-weight:400;letter-spacing:-.2px;color:var(--green)}
+.pay-option-sub {font-size:10px;line-height:1.7;color:var(--text-muted)}
+.pay-due-line {display:flex;align-items:center;gap:8px;margin-top:12px;padding:12px 14px;border:1px dashed var(--border);border-radius:9px;font-size:11px;color:var(--text-secondary)}
+.pay-due-line svg {flex-shrink:0;color:var(--green)}
+.pay-due-line strong {margin-inline-start:auto;font-size:14px;font-family:Georgia,serif;font-weight:400;color:var(--ink)}
+.summary-due {display:flex;align-items:center;gap:8px;margin-top:14px;padding:12px 14px;border-radius:9px;background:var(--soft-bg);border:1px solid var(--border);font-size:11px;color:var(--text-secondary)}
+.summary-due svg {color:var(--green);flex-shrink:0}
+.summary-due strong {margin-inline-start:auto;font-size:15px;font-family:Georgia,serif;font-weight:400;color:var(--green)}
+.summary-due small {flex-basis:100%;font-size:10px;color:var(--text-muted);padding-inline-start:22px}
+.xmr-stage-line {display:flex;gap:7px;align-items:flex-start;font-size:10px;line-height:1.7;color:var(--text-secondary);padding:11px 13px;margin-top:11px;border-radius:8px;background:var(--soft-bg);border:1px solid var(--border)}
+.xmr-stage-line svg {flex-shrink:0;margin-top:2px;color:var(--green)}
+.xmr-stage-pill {font-size:9px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.xmr-stage-pill.is-deposit {background:var(--green);color:#fff}
+.xmr-stage-pill.is-full {background:var(--secondary);color:var(--text-secondary)}
 .xmr-contact-fields {display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:16px}.xmr-contact-fields>div {display:grid;gap:6px;min-width:0}.xmr-contact-fields>div:nth-of-type(1) {grid-column:1/2}.xmr-contact-fields>div:nth-of-type(2) {grid-column:2/3}.xmr-contact-fields>div:nth-of-type(3),.xmr-contact-fields>div:nth-of-type(4) {grid-column:1/-1}.xmr-contact-fields label {font-size:10px;color:var(--text-secondary);font-weight:600}.xmr-contact-fields .payment-acknowledgement {grid-column:1/-1;margin:6px 0 2px}.xmr-contact-fields .booking-submit,.xmr-contact-fields .edit-request {grid-column:1/-1}
 .payment-acknowledgement input[type=checkbox] {margin-top:3px;flex-shrink:0;width:15px;height:15px;accent-color:var(--green)}.success-actions {display:flex;gap:13px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:4px}.success-actions .primary-button {display:inline-flex;gap:8px;align-items:center}.success-actions .edit-request {margin:0}
 .receipt-card {margin:24px 0;padding:24px;border:1px solid var(--border);border-radius:12px;background:var(--soft-bg);text-align:left}
@@ -443,12 +472,10 @@ bdi {unicode-bidi:isolate}
 .receipt-code-box small {display:block;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
 .receipt-code {display:block;font-size:22px;letter-spacing:2px;font-family:Georgia,serif;color:var(--green);margin-bottom:8px}
 .receipt-details {margin:0}.receipt-details dt {font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}.receipt-details dd {font-size:13px;color:var(--text);margin:0 0 8px}
-.receipt-simplex {display:flex;gap:18px;align-items:center;margin:20px 0;padding:18px;border:1px solid var(--border);border-radius:11px;background:var(--card)}
-.receipt-simplex img {flex-shrink:0;border-radius:8px}
-.receipt-simplex p {font-size:12px;line-height:1.7;color:var(--text-secondary);margin:4px 0}
-.receipt-simplex .primary-button {display:inline-flex;gap:7px;align-items:center;margin-top:10px;font-size:12px}
+.receipt-details>div {display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding-block:9px;border-bottom:1px solid var(--border)}.receipt-details>div:last-child {border-bottom:0;margin-bottom:0}
+
 .receipt-actions {text-align:center;margin-top:16px}
-@media(max-width:640px) {.gallery-slide {height:265px}.gallery-arrow {width:34px;height:34px}.gallery-counter {font-size:9px;bottom:12px}.gallery-thumbnails {padding:10px 14px}.gallery-thumbnails>button {flex-basis:72px;height:52px}.gallery-note {font-size:9px;padding-inline:16px}.payment-dialog {width:calc(100vw - 20px)!important;max-height:94dvh}.payment-screen {padding:24px 16px}.payment-header [data-slot=dialog-title] {font-size:27px}.checkout-layout {grid-template-columns:1fr;gap:16px}.payment-panel,.checkout-summary {padding:18px}.checkout-summary {order:-1}.checkout-steps {font-size:10px;gap:8px}.checkout-steps li+li:before {width:14px;margin-inline-end:2px}.preview-card {max-width:380px}.payment-demo-notice {padding:12px}.payment-complete {padding:48px 20px}.payment-complete [data-slot=dialog-title] {font-size:27px}.listing-notes {padding:16px}.xmr-address-layout {flex-direction:column}.xmr-qr {width:120px;height:120px}.xmr-contact-fields {grid-template-columns:1fr}.xmr-contact-fields>div:nth-of-type(1),.xmr-contact-fields>div:nth-of-type(2) {grid-column:1/-1}.xmr-amount-xmr {font-size:24px}.receipt-simplex {flex-direction:column;text-align:center}.receipt-simplex .primary-button {margin-inline:auto}}
+@media(max-width:640px) {.gallery-slide {height:265px}.gallery-arrow {width:34px;height:34px}.gallery-counter {font-size:9px;bottom:12px}.gallery-thumbnails {padding:10px 14px}.gallery-thumbnails>button {flex-basis:72px;height:52px}.gallery-note {font-size:9px;padding-inline:16px}.payment-dialog {width:calc(100vw - 20px)!important;max-height:94dvh}.payment-screen {padding:24px 16px}.payment-header [data-slot=dialog-title] {font-size:27px}.checkout-layout {grid-template-columns:1fr;gap:16px}.payment-panel,.checkout-summary {padding:18px}.checkout-summary {order:-1}.checkout-steps {font-size:10px;gap:8px}.checkout-steps li+li:before {width:14px;margin-inline-end:2px}.preview-card {max-width:380px}.payment-demo-notice {padding:12px}.payment-complete {padding:48px 20px}.payment-complete [data-slot=dialog-title] {font-size:27px}.listing-notes {padding:16px}.xmr-address-layout {flex-direction:column}.xmr-qr {width:120px;height:120px}.xmr-contact-fields {grid-template-columns:1fr}.xmr-contact-fields>div:nth-of-type(1),.xmr-contact-fields>div:nth-of-type(2) {grid-column:1/-1}.xmr-amount-xmr {font-size:24px}.pay-option-grid {grid-template-columns:1fr}}
 
 .generic-price-note {font-size:10px;line-height:1.7;color:var(--text-muted);margin:-5px 0 18px}
 

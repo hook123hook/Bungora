@@ -17,6 +17,8 @@ create table if not exists public.bungalow_bookings (
   nightly_price numeric(12,2),
   total_try numeric(16,2),
   price_estimate boolean not null default true,
+  -- Hangi ödeme aşaması seçildi: 'full' = tam ödeme, 'deposit' = %25 ön ödeme.
+  payment_stage text not null default 'full' check (payment_stage in ('full','deposit')),
   lang text not null default 'tr',
   message text,
   status text not null default 'new',
@@ -54,3 +56,7 @@ end $$;
 
 -- Admin panel reads booking.source ("Kaynak" column); older installs lack it.
 alter table public.bungalow_bookings add column if not exists source text;
+
+-- Ödeme aşaması (tam / %25 ön ödeme); eski kayıtlar 'full' sayılır.
+alter table public.bungalow_bookings add column if not exists payment_stage text not null default 'full';
+update public.bungalow_bookings set payment_stage = 'full' where payment_stage is null;

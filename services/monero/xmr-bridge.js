@@ -293,8 +293,7 @@ p{font-size:14px;color:#475569;line-height:1.6;margin:8px 0}
 <div><dt>Konaklama</dt><dd>${safeNights} gece</dd></div>
 <div><dt>Ödenen Tutar</dt><dd>≈ ${Number(amountTry).toLocaleString('tr-TR')} ₺ (${Number(amountXmr).toFixed(6)} XMR)</dd></div>
 </dl>
-<a class="btn" href="https://smp19.simplex.im/a#o7JePoRgFSCSF5EaJJcJ8gG2a7CzrOLaeo9aVU3rliE">SimpleX ile İletişime Geç</a>
-<p>Rezervasyon detayları ve tesis iletişimi için yukarıdaki butonu kullanın.</p>
+<p>Lütfen bu e-postadaki fatura numarasını saklayın; tesise girişte teyit için gerekebilir.</p>
 <div class="footer"><p>Bu e-posta Bungora otomatik ödeme sistemi tarafından gönderilmiştir.<br>Ödeme: Monero (XMR) · Anonim &amp; güvenli.</p></div>
 </div></body></html>`;
 }

@@ -1,17 +1,23 @@
 import { NextResponse } from "next/server";
 import {
+  DEPOSIT_PCT,
   MAX_AMOUNT_TRY,
   SAFETY_PCT,
   VALIDITY_MIN,
+  VALID_STAGES,
   randomInvoiceNo,
   requireEnv,
+  stageFactor,
   supabaseJson,
   xmrTryRate,
+  type Stage,
 } from "../_lib";
 
 // POST /api/xmr/invoice
-// Body: { amount_try: number, reference: string, label?: string }
-// Pops one unused subaddress from the pool and stores the invoice (single private XMR payment).
+// Body: { amount_try, reference, label?, stage?: 'full'|'deposit'|'remainder', client_key? }
+// amount_try is ALWAYS the full stay total; stage decides the amount actually invoiced
+// (full = 100%, deposit = %25 guarantee, remainder = %75 balance after deposit).
+// Pops one unused subaddress from the pool and stores the invoice.
 export async function POST(request: Request) {
   let body: Record<string, unknown>;
   try {
@@ -30,6 +36,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid reference" }, { status: 400 });
   }
 
+  const stage: Stage = VALID_STAGES.includes(body.stage as Stage) ? (body.stage as Stage) : "full";
+  // Per-checkout idempotency key: one key per payment flow, so a retry returns the SAME
+  // invoice instead of burning another pool address. Never scoped to a shared value.
+  const clientKey = String(body.client_key || "").trim().slice(0, 64);
+  const amountStageTry = Math.round(amountTry * stageFactor(stage));
+
   let cfg;
   try {
     cfg = requireEnv();
@@ -44,7 +56,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Rate unavailable, please retry" }, { status: 502 });
   }
 
-  const amountXmr = Math.round((amountTry * (1 + SAFETY_PCT / 100) / tryPerXmr) * 1000000) / 1000000;
+  // Return an existing live invoice for this exact flow rather than minting a duplicate.
+  if (clientKey.length > 8) {
+    try {
+      const q = `/rest/v1/xmr_invoices?client_key=eq.${encodeURIComponent(clientKey)}&stage=eq.${stage}&reference=eq.${encodeURIComponent(reference)}&status=in.(pending,partial)&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&select=id,invoice_no,address,subaddress_index,amount_fiat,total_fiat,amount_xmr,fx_rate,expires_at,stage&limit=1`;
+      const dedup = await supabaseJson(cfg.url, q, { key: cfg.key });
+      const found = dedup.ok ? (await dedup.json())?.[0] : null;
+      if (found) {
+        return NextResponse.json({
+          id: found.id,
+          invoice_no: found.invoice_no,
+          address: found.address,
+          subaddress_index: found.subaddress_index,
+          amount_try: Number(found.amount_fiat),
+          total_try: Number(found.total_fiat ?? found.amount_fiat),
+          stage: found.stage || stage,
+          deposit_pct: DEPOSIT_PCT,
+          amount_xmr: Number(found.amount_xmr),
+          fx_rate: Number(found.fx_rate),
+          expires_at: found.expires_at,
+          qr: `monero:${found.address}?tx_amount=${Number(found.amount_xmr)}&tx_description=${encodeURIComponent(found.invoice_no)}`,
+        });
+      }
+    } catch {
+      // Dedup must never block checkout; fall through to a fresh invoice.
+    }
+  }
+
+  const amountXmr = Math.round((amountStageTry * (1 + SAFETY_PCT / 100) / tryPerXmr) * 1000000) / 1000000;
 
   // Atomically pop one unused subaddress from the pool (RPC in supabase/schema-xmr.sql)
   let popped;
@@ -85,8 +124,11 @@ export async function POST(request: Request) {
         invoice_no: invoiceNo,
         address: popped.address,
         subaddress_index: popped.subaddress_index,
-        amount_fiat: amountTry,
+        amount_fiat: amountStageTry,
         currency: "TRY",
+        stage,
+        total_fiat: amountTry,
+        client_key: clientKey || null,
         amount_xmr: amountXmr,
         fx_rate: tryPerXmr,
         safety_pct: SAFETY_PCT,
@@ -105,6 +147,9 @@ export async function POST(request: Request) {
           address: row.address,
           subaddress_index: row.subaddress_index,
           amount_try: Number(row.amount_fiat),
+          total_try: Number(row.total_fiat ?? amountTry),
+          stage: row.stage || stage,
+          deposit_pct: DEPOSIT_PCT,
           amount_xmr: Number(row.amount_xmr),
           fx_rate: Number(row.fx_rate),
           expires_at: row.expires_at,

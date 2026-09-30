@@ -37,6 +37,7 @@ export async function POST(request: Request) {
     nights: Number.isInteger(body.nights) ? (body.nights as number) : null,
     nightly_price: num(body.nightly_price),
     total_try: num(body.total_try),
+    payment_stage: body.payment_stage === "deposit" ? "deposit" : "full",
     price_estimate: body.price_estimate !== false,
     lang: str(body.lang, 10) || "tr",
     message: str(body.message, 5000),

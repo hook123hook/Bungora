@@ -1,6 +1,17 @@
 export const SAFETY_PCT = 3;
 export const VALIDITY_MIN = 30;
 export const MAX_AMOUNT_TRY = 500000;
+// Rezervasyon garantisi için ön ödeme oranı (ViaRela ile aynı mantık).
+export const DEPOSIT_PCT = 25;
+export const VALID_STAGES = ["full", "deposit", "remainder"] as const;
+export type Stage = (typeof VALID_STAGES)[number];
+
+// full = tam tutar, deposit = %25 ön ödeme, remainder = ön ödeme sonrası kalan.
+export function stageFactor(stage: Stage) {
+  if (stage === "deposit") return DEPOSIT_PCT / 100;
+  if (stage === "remainder") return (100 - DEPOSIT_PCT) / 100;
+  return 1;
+}
 
 let rateCache: { at: number; value: number } | null = null;
 export async function xmrTryRate() {

@@ -39,8 +39,9 @@ olarak dahil edilmemiştir; aşağıdaki adımlarda kendi değerlerini doldur.
 1. Supabase'te yeni proje oluştur (ör. `Bungora`).
 2. SQL Editor'de **sırayla** çalıştır:
    - `supabase/schema-xmr.sql`
+   - `supabase/migration-xmr-deposit.sql` (yalnızca eski kurulumlar için)
    - `supabase/schema-booking.sql`
-   Sh'emalar `xmr_invoices`, `xmr_address_pool`, `xmr_payments`, `bungalow_bookings`
+   Şemalar `xmr_invoices`, `xmr_address_pool`, `xmr_payments`, `bungalow_bookings`
    tablolarını ve RLS politikalarını oluşturur.
 3. Not: müşteri e-postası `xmr_invoices` içinde tutulmaz; kod, fatura `reference`
    alanındaki rezervasyon kimliğiyle `bungalow_bookings.email` adresini okur.
@@ -80,8 +81,10 @@ olarak dahil edilmemiştir; aşağıdaki adımlarda kendi değerlerini doldur.
    `config.json` dosyasına yazılır, Vercel'e eklenmez.)
 4. Build: `vercel build` → Prod: `vercel --prod`
 
-> Site, **email'sız konfirmasyon** kullanır: ödeme sonrası ekranda benzersiz onay kodu
-> ve SimpleX QR/linki gösterilir (SimpleX linki `monero-payment.tsx`'de yapılandırılır).
+> Site, **email'sız konfirmasyon** kullanır: rezervasyon formu gönderildikten sonra kullanıcı
+> doğrudan ödeme ekranına geçer. Seçilen ödeme aşamasına göre tek seferlik Monero adresi + QR üretilir:
+> `%25 ön ödeme` rezervasyon garantisi verir, kalan tutar tesise varışta ödenir; `Tam ödeme`
+> konaklamanın tamamını kapatır. Ödeme sonrası ekranda benzersiz onay kodu gösterilir.
 
 ---
 
@@ -99,5 +102,5 @@ olarak dahil edilmemiştir; aşağıdaki adımlarda kendi değerlerini doldur.
 - `lib/bungalows.ts`, `lib/messages.ts`, `lib/catalog-translations.ts` — bungalov içerikleri
 - `lib/preferences.ts`, `lib/property-gallery.ts` — fiyat/tesis tercihleri, galeri
 - `public/` — görseller
-- `services/monero/config.json` — cüzdan adresi, RPC, SimpleX, Resend
-- `components/monero-payment.tsx` — SimpleX linki / marka metinleri
+- `services/monero/config.json` — cüzdan adresi, RPC, isteğe bağlı bildirimler, Resend
+- `components/monero-payment.tsx` — ödeme aşaması seçenekleri / marka metinleri
