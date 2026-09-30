@@ -107,7 +107,7 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (sending || !estimate || !agreed) return;
-    if (!firstName.trim() || !contact.trim()) { setError(t("Lütfen adını ve iletişim bilgini gir.")); return; }
+    if (!firstName.trim() || !lastName.trim() || !contact.trim()) { setError(t("Lütfen adını ve iletişim bilgini gir.")); return; }
     setSending(true); setError("");
     let bookingOk = false;
     let bookingId: string | null = null;
@@ -265,7 +265,7 @@ export function MoneroPayment({ bungalow, checkIn, checkOut, guests }: { bungalo
         <h3 id="contact-fields-heading">{t("İletişim bilgileri")}</h3>
         <form className="xmr-contact-fields" onSubmit={submit} noValidate>
           <div><label htmlFor="xmr-first-name">{t("Ad")}</label><Input id="xmr-first-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" required/></div>
-          <div><label htmlFor="xmr-last-name">{t("Soyad")}</label><Input id="xmr-last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name"/></div>
+          <div><label htmlFor="xmr-last-name">{t("Soyad")}</label><Input id="xmr-last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" required/></div>
           <div><label htmlFor="xmr-contact">{t("İletişim (e-posta)")}</label><Input id="xmr-contact" value={contact} onChange={(e) => setContact(e.target.value)} autoComplete="email" dir="ltr" required/></div>
           <div><label htmlFor="xmr-message">{t("Mesaj (isteğe bağlı)")}</label><Input id="xmr-message" value={message} onChange={(e) => setMessage(e.target.value)}/></div>
           <input type="text" name="website" value="" hidden aria-hidden="true" tabIndex={-1} autoComplete="off"/>
