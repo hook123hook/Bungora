@@ -1,0 +1,19 @@
+# Bungora | Netlify deploy (Next.js App Router + API routes)
+# Framework detection handles the Next.js Runtime automatically.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Security headers (mirrors vercel.json)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https://api.qrserver.com https://fastly.picsum.photos https://images.unsplash.com https://*.unsplash.com https://abantbungalov.com https://www.homywood.com.tr https://*.homywood.com.tr https://nesilcetatilkoyu.com https://perabungalov.com https://www.seyronabutikotel.com https://*.bungalov.com.tr https://*.bungalovla.com https://*.trav3l.net https://*.tatilsepeti.com https://*.tatilbudur.net https://*.enuygun.com https://*.cloudfront.net https://img.otelz.com https://imgkit.otelz.com https://otelz.com https://catikatibungalow.com https://mencunakonaklari.com https://www.aybelya.com; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.coingecko.com https://api.frankfurter.dev https://*.supabase.co wss://*.supabase.co; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'"
